@@ -51,10 +51,14 @@ class GitHubCrawler:
         scores = []
         total = 0
         for u in contributors:
-            x = len(repo.get_commits(author=u))
-            total += x
+            x = repo.get_commits(author=u)
+            if x is None:
+                c = 0
+            else:
+                c = x.totalCount()
+            total += c
             contributor_ids.append(str(u.id))
-            scores.append(x)
+            scores.append(c)
         scores = [float(score)/total for score in scores]
         return contributor_ids, scores
 
