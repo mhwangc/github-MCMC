@@ -1,7 +1,7 @@
 # github-MCMC
 Using MCMC &amp; Page Rank to rank Github repositories and users.
 
-# To use:
+## To use:
 
 ```
 pip install requirements.txt

@@ -3,6 +3,7 @@ from store import Store
 import random
 import os
 import json
+import numpy as np
 
 # TODO: Test out new code
 # TODO: Implement stack, look for loops, logging etc
@@ -15,34 +16,34 @@ class GitHubCrawler:
         self.g = Github(token)
         self.seen_users = Store("/users") # {ID: count}
         self.seen_repos = Store("/repos") # {ID: int}
-        self.contributors_cache = Store("/cache") #{repoID: [userlogin]}
+        self.contributors_cache = Store("/cache") #([userID], [score])
         self.top_repos = ['kubernetes/kubernetes'] # repos to pick from
 
     # Takes in Repository object and returns User object or None
     def get_random_contributor(self, repository):
         if self.contributors_cache.read(repository.id) is None:
-            if len(repository.get_contributors()) == 0:
+            contributors = list(repository.get_contributors())
+            if len(contributors) == 0:
                 return None
-            scores, total = self.generate_commit_scores(repository)
-            self.contributors_cache.write(repository.id, json.dumps(scores), ttl=len(scores)*50)
+            contributors, scores = self.generate_commit_scores(contributors, repository)
+            self.contributors_cache.write(repository.id, json.dumps((contributors,scores)), ttl=len(scores)*50)
         else:
-            scores = json.loads(self.contributors_cache.read(repository))
-            total = 0
-            for x, y in scores:
-                total += y
-        # TODO: Binary search w/ lottery
-        random_contributor_login = random.choice(scores)[0]
-        return self.g.get_user(random_contributor_login)
+            contributors, scores = json.loads(self.contributors_cache.read(repository.id))
+        random_contributor_id = np.random.choice(contributors, 1, p=scores)[0] 
+        return self.g.get_user(random_contributor_id)
 
-    # Takes in a Repository object and returns a mapping of users IDs to commit scores and the total score
-    def generate_commit_scores(self, repo):
+    # Takes in a Repository object and returns a list of contributor ids and a list of their percentage contributed 
+    def generate_commit_scores(self, contributors, repo):
+        contributor_ids = []
         scores = []
         total = 0
-        for u in repo.get_contributors():
+        for u in contributors:
             x = len(repo.get_commits(author=u))
             total += x
-            scores.append((u.id, x))
-        return scores, total
+            contributor_ids.append(str(u.id))
+            scores.append(x)
+        scores = [float(score)/total for score in scores]
+        return contributor_ids, scores
 
     # Takes in NamedUser object and returns Repository object or empty string
     def get_random_starred_repo(self, user):
@@ -79,7 +80,7 @@ class GitHubCrawler:
             self.crawl(random.choice(self.top_repos), iterations)
 
 def main():
-    g = GitHubCrawler(os.getenv('github-mcmc-token'))
+    g = GitHubCrawler(os.getenv('github-mcmc-token'), per_page=100)
     g.crawl('kubernetes/kubernetes', 10)
 
 if __name__ == '__main__':
