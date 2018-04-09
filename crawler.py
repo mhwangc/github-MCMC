@@ -1,35 +1,24 @@
-from github import Github
-from store import Store
 import random
 import os
 import json
 import numpy as np
 
-# Logging
-now = datetime.datetime.now().strftime("%Y-%m-%d-%H-%M")
-logger = logging.getLogger(__name__)
-logger.setLevel(logging.INFO)
-formatter = logging.Formatter('%(asctime)s: %(message)s')
-fh = logging.FileHandler('logs/crawler'+now)
-sh = logging.StreamHandler(sys.stdout)
-fh.setFormatter(formatter)
-sh.setFormatter(formatter)
-logger.addHandler(fh)
-logger.addHandler(sh)
+from github import Github
+from store import Store
+from specs import GITHUB_TOKENS, SPIDER_TRAP, TOP_REPOS, logger
+
 
 # TODO: Test out new code
 # TODO: Implement stack, look for loops, logging etc
 
+
 class GitHubCrawler:
 
-    spider_trap = .01
-
-    def __init__(self, token):
-        self.g = Github(token)
-        self.seen_users = Store("/users") # {ID: count}
-        self.seen_repos = Store("/repos") # {ID: int}
-        self.contributors_cache = Store("/cache") #([userID], [score])
-        self.top_repos = ['kubernetes/kubernetes'] # repos to pick from
+    def __init__(self, tokens):
+        self.g = [Github(token, per_page=100) for token in tokens]
+        self.seen_users = Store("/users")  # {ID: count}
+        self.seen_repos = Store("/repos")  # {ID: int}
+        self.contributors_cache = Store("/cache")  # ([userID], [score])
 
     # Takes in Repository object and returns User object or None
     def get_random_contributor(self, repository):
@@ -43,9 +32,9 @@ class GitHubCrawler:
         else:
             contributors, scores = json.loads(self.contributors_cache.read(repository.id))
         random_contributor_id = np.random.choice(contributors, 1, p=scores)[0] 
-        return self.g.get_user(random_contributor_id)
+        return random.choice(self.g).get_user(random_contributor_id)
 
-    # Takes in a Repository object and returns a list of contributor ids and a list of their percentage contributed 
+    # Takes in a Repository object and returns a list of contributor ids and a list of their percentage contributed
     def generate_commit_scores(self, contributors, repo):
         contributor_ids = []
         scores = []
@@ -71,11 +60,11 @@ class GitHubCrawler:
         return random_repo
 
     # start can be a full name "user/repo" or an ID
-    def crawl(self, start, iterations=-1):
-        curr_repo = self.g.get_repo(start)
+    def crawl(self, iterations=-1):
+        curr_repo = random.choice(self.g).get_repo(random.choice(TOP_REPOS))
         logger.info("Starting at repository: %s (%s)", curr_repo.full_name, curr_repo.id)
         while iterations > 0:
-            if random.random() < self.spider_trap:
+            if random.random() < SPIDER_TRAP:
                 logger.info("Spider trap")
                 break
 
@@ -96,12 +85,13 @@ class GitHubCrawler:
             logger.info("Crawled to repository: %s (%s)", curr_repo.full_name, curr_repo.id)
 
             iterations -= 1
-        if iterations != 0: # Spider trap
-            self.crawl(random.choice(self.top_repos), iterations)
+        if iterations != 0:  # Spider trap
+            self.crawl(iterations)
+
 
 def main():
-    g = GitHubCrawler(os.getenv('github-mcmc-token'), per_page=100)
-    g.crawl('kubernetes/kubernetes', 10)
+    g = GitHubCrawler(GITHUB_TOKENS)
+    g.crawl(10)
 
 if __name__ == '__main__':
     main()

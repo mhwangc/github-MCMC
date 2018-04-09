@@ -5,9 +5,11 @@ Using MCMC &amp; Page Rank to rank Github repositories and users.
 
 ```
 pip install requirements.txt
+unzip node_modules.zip
+quilt run ./main.js
 ```
 
-Set environment variable `github-MCMC-token` to your API token. Run,
+Add your API token to `specs.py`. Run,
 
 ```
 python crawler.py
