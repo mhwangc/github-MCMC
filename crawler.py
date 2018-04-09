@@ -5,6 +5,18 @@ import os
 import json
 import numpy as np
 
+# Logging
+now = datetime.datetime.now().strftime("%Y-%m-%d-%H-%M")
+logger = logging.getLogger(__name__)
+logger.setLevel(logging.INFO)
+formatter = logging.Formatter('%(asctime)s: %(message)s')
+fh = logging.FileHandler('logs/crawler'+now)
+sh = logging.StreamHandler(sys.stdout)
+fh.setFormatter(formatter)
+sh.setFormatter(formatter)
+logger.addHandler(fh)
+logger.addHandler(sh)
+
 # TODO: Test out new code
 # TODO: Implement stack, look for loops, logging etc
 
@@ -27,6 +39,7 @@ class GitHubCrawler:
                 return None
             contributors, scores = self.generate_commit_scores(contributors, repository)
             self.contributors_cache.write(repository.id, json.dumps((contributors,scores)), ttl=len(scores)*50)
+            logger.info("Cached contributors and scores for %s", repository.full_name)
         else:
             contributors, scores = json.loads(self.contributors_cache.read(repository.id))
         random_contributor_id = np.random.choice(contributors, 1, p=scores)[0] 
@@ -56,24 +69,27 @@ class GitHubCrawler:
     # start can be a full name "user/repo" or an ID
     def crawl(self, start, iterations=-1):
         curr_repo = self.g.get_repo(start)
-
+        logger.info("Starting at repository: %s (%s)", curr_repo.full_name, curr_repo.id)
         while iterations > 0:
             if random.random() < self.spider_trap:
+                logger.info("Spider trap")
                 break
 
             curr_user = self.get_random_contributor(curr_repo)
             if not curr_user:
+                logger.info("User %s (%s) has no starred repositories", curr_user.login, curr_user.id)
                 break
 
             self.seen_users.increment(curr_user.id)
-            print(curr_user.login)
+            logger.info("Crawled to user: %s (%s)", curr_user.login, curr_user.id)
 
             curr_repo = self.get_random_starred_repo(curr_user)
             if not curr_repo:
+                logger.info("Repository %s (%s) has no contributors", curr_repo.full_name, curr_repo.id)
                 break
 
             self.seen_repos.increment(curr_repo.id)
-            print(curr_repo.name)
+            logger.info("Crawled to repository: %s (%s)", curr_repo.full_name, curr_repo.id)
 
             iterations -= 1
         if iterations != 0: # Spider trap
