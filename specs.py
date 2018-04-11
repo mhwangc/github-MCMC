@@ -1,8 +1,16 @@
+import pandas
+
 GITHUB_TOKENS = []
 
 SPIDER_TRAP = 0.1
 
-TOP_REPOS = ["kubernetes/kubernetes"]
+data = pandas.read_csv("top-repos.csv", header=0)
+
+TOP_REPOS = data["repo_name"]
+TOP_REPO_IDS = data["repo_id"]
+
+print(TOP_REPOS)
+print(TOP_REPO_IDS)
 
 # Logging
 now = datetime.datetime.now().strftime("%Y-%m-%d-%H-%M")
