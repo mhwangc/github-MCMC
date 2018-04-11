@@ -1,5 +1,5 @@
 import etcd
-import os
+import os, sys, random
 
 portnum = int(os.getenv("etcdport", "2379"))
 
@@ -8,7 +8,7 @@ for h in os.getenv("etcdhosts", "localhost").split(","):
     if h != "":
         hostname.append((h, portnum))
 
-print(hostname)
+print("Connected to:", hostname)
 client = etcd.Client(host=tuple(hostname), allow_reconnect=True)
 
 
@@ -44,12 +44,62 @@ class Store:
         except etcd.EtcdKeyNotFound:
             return None
 
-if __name__ == '__main__':
+# Helper functions to test, clear, and see data
+
+
+def clear_db(path):
+    try:
+        client.delete(path, recursive=True)
+    except etcd.EtcdKeyNotFound:
+        print(path, "is not a valid path")
+
+
+def get_top_results(path="/repos", n=100):
+    try:
+        direc = client.get(path)
+        leaderboard = [(r.key, int(r.value)) for r in direc.children]
+        return sorted(leaderboard, key=lambda x: x[1], reverse=True)[:n]
+    except etcd.EtcdKeyNotFound:
+        print(path, "is not a valid path")
+        return []
+
+
+def test():
     s = Store("/test")
-    s.write("key1", "value1")
-    s.write("key2", "value2")
-    s.write("key3", 1)
-    s.increment("key3")
-    print(s.list("/"))
+    trials = 50
+    record = {}
+    for i in range(trials+1):
+        x = random.randint(0, 10000)
+        s.write("key" + str(i), str(x))
+        record["/test/key" + str(i)] = x
+    for _ in range(trials * 10):
+        i = random.randint(0, trials)
+        s.increment("key" + str(i))
+        record["/test/key" + str(i)] += 1
+    expected = []
+    for k, v in record.items():
+        expected.append((k, str(v)))
+    expected = sorted(expected)
+    b = sorted(s.list("/")) == expected
+    print("Test Passed:", b)
+    for result in get_top_results("/test/", trials // 5):
+        print(result[0], ":", result[1])
     client.delete('/test', recursive=True)
+
+
+if __name__ == '__main__':
+    if len(sys.argv) == 1:
+        print("Run with argument {test, clear, leader}.")
+    if sys.argv[1] == "test":
+        test()
+    elif sys.argv[1] == "clear":
+        clear_db("/repos/")
+        clear_db("/users/")
+        clear_db("/cache/")
+    elif sys.argv[1] == "leader":
+        for result in get_top_results():
+            print(result[0], ":", result[1])
+    else:
+        print(sys.argv[1], "is not a valid argument. Choose from {test, clear, leader}.")
+
 
