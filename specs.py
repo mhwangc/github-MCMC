@@ -4,7 +4,7 @@ import logging
 import logging.handlers
 import sys
 
-GITHUB_TOKENS = ["f36afb0b87470fe88c420a1da27c265bb2caab81", "8b748f83e389d682bce5584282f276c9596a3bc1"]
+GITHUB_TOKENS = ["f36afb0b87470fe88c420a1da27c265bb2caab81", "8b748f83e389d682bce5584282f276c9596a3bc1", "74cb3a4715aea3274dff2119e9fccb5786849e17"]
 
 SPIDER_TRAP = 0.05
 

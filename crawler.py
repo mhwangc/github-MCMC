@@ -4,6 +4,8 @@ import json
 import numpy as np
 import datetime
 import logging
+import socket
+from socket import *
 
 from github import Github
 from store import Store
@@ -27,7 +29,8 @@ class GitHubCrawler:
     @property
     def g(self):
         self.token_num = (self.token_num+1)%len(self.g_arr)
-        return self.g_arr[self.token_num]
+        g = self.g_arr[self.token_num]
+        return g
 	
 
     # Takes in Repository object and returns User object or None
@@ -86,41 +89,46 @@ class GitHubCrawler:
         return random_repo
 
     # start can be a full name "user/repo" or an ID
-    def crawl(self, iterations=-1):    
-        while iterations != 0:
-            curr_repo = self.g.get_repo(random.choice(TOP_REPOS))
-            logger.info("Starting at repository: %s (%s)", curr_repo.full_name, curr_repo.id)
+    def crawl(self, iterations=-1): 
+        try:   
             while iterations != 0:
-                if random.random() < SPIDER_TRAP:
-                    logger.info("Spider trap")
-                    break
+                curr_repo = self.g.get_repo(random.choice(TOP_REPOS))
+                logger.info("Starting at repository: %s (%s)", curr_repo.full_name, curr_repo.id)
+                while iterations != 0:
+                    if random.random() < SPIDER_TRAP:
+                        logger.info("Spider trap")
+                        break
 
-                curr_user = self.get_random_contributor(curr_repo)
-                if not curr_user:
-                    logger.info("Repository %s (%s) has no contributors", curr_repo.full_name, curr_repo.id)
-                    break
+                    curr_user = self.get_random_contributor(curr_repo)
+                    if not curr_user:
+                        logger.info("Repository %s (%s) has no contributors", curr_repo.full_name, curr_repo.id)
+                        break
 
-                self.seen_users.increment(curr_user.id)
-                logger.info("Crawled to user: %s (%s)", curr_user.login, curr_user.id)
-                if random.random() < SPIDER_TRAP:
-                    logger.info("Spider trap")
-                    break
+                    self.seen_users.increment(curr_user.id)
+                    logger.info("Crawled to user: %s (%s)", curr_user.login, curr_user.id)
+                    if random.random() < SPIDER_TRAP:
+                        logger.info("Spider trap")
+                        break
 
-                curr_repo = self.get_random_starred_repo(curr_user)
-                if not curr_repo:
-                    logger.info("User %s (%s) has no starred repositories", curr_user.login, curr_user.id)
-                    break
+                    curr_repo = self.get_random_starred_repo(curr_user)
+                    if not curr_repo:
+                        logger.info("User %s (%s) has no starred repositories", curr_user.login, curr_user.id)
+                        break
 
-                self.seen_repos.increment(curr_repo.id)
-                logger.info("Crawled to repository: %s (%s)", curr_repo.full_name, curr_repo.id)
+                    self.seen_repos.increment(curr_repo.id)
+                    logger.info("Crawled to repository: %s (%s)", curr_repo.full_name, curr_repo.id)
 
-                iterations -= 1
-	
+                    iterations -= 1
+    	   return iterations
+        except socket.timeout:
+            return iterations
 
 
 def main():
     g = GitHubCrawler(GITHUB_TOKENS)
-    g.crawl(-1)
+    iterations_left = -1
+    while iterations_left:
+        iterations_left = g.crawl(iterations_left)
 
 if __name__ == '__main__':
     main()
