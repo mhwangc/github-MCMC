@@ -4,9 +4,9 @@ import logging
 import logging.handlers
 import sys
 
-GITHUB_TOKENS = []
+GITHUB_TOKENS = ["f36afb0b87470fe88c420a1da27c265bb2caab81", "8b748f83e389d682bce5584282f276c9596a3bc1"]
 
-SPIDER_TRAP = 0.01
+SPIDER_TRAP = 0.05
 
 data = pandas.read_csv("top-repos.csv", header=0)
 
