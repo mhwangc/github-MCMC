@@ -119,7 +119,7 @@ class GitHubCrawler:
                     logger.info("Crawled to repository: %s (%s)", curr_repo.full_name, curr_repo.id)
 
                     iterations -= 1
-    	   return iterations
+            return iterations
         except socket.timeout:
             return iterations
 
