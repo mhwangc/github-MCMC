@@ -20,7 +20,7 @@ class Store:
     # Returns the value stored at path/key
     def read(self, key):
         try:
-            return client.read(self.path + "/" + str(key))
+            return client.read(self.path + "/" + str(key)).value
         except etcd.EtcdKeyNotFound:
             return None
 
@@ -48,7 +48,8 @@ if __name__ == '__main__':
     s = Store("/test")
     s.write("key1", "value1")
     s.write("key2", "value2")
-    s.write("key3", "value3")
+    s.write("key3", 1)
+    s.increment("key3")
     print(s.list("/"))
     client.delete('/test', recursive=True)
 
