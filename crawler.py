@@ -5,7 +5,6 @@ import numpy as np
 import datetime
 import logging
 import socket
-from socket import *
 
 from github import Github
 from store import Store
@@ -75,7 +74,7 @@ class GitHubCrawler:
                 total += u.total
                 contributor_logins.append(str(u.author.login))
                 scores.append(u.total)
-        if len(contributor_logins) == 0:
+        if len(contributor_logins) == 0 or total == 0:
             return None, None
         scores = [float(score)/total for score in scores]
         return contributor_logins, scores
