@@ -55,10 +55,16 @@ def clear_db(path):
 
 
 def get_top_results(path="/repos", n=100):
+    leaders = []
     try:
         direc = client.get(path)
-        leaderboard = [(r.key, int(r.value)) for r in direc.children]
-        return sorted(leaderboard, key=lambda x: x[1], reverse=True)[:n]
+        users = [r.key for r in direc.children]
+        for u in users:
+             direc2 = client.get(u)
+             leaders.extend([(r.key, r.value) for r in direc2.children])
+        print("Total of {0} repos in db".format(len(leaders)))
+        print("Average of {0} points per repo".format(sum([int(x[1]) for x in leaders]) / len(leaders)))
+        return sorted(leaders, key=lambda x: int(x[1]), reverse=True)[:n]
     except etcd.EtcdKeyNotFound:
         print(path, "is not a valid path")
         return []

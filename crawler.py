@@ -120,12 +120,12 @@ class GitHubCrawler:
                     if not curr_repo:
                         logger.info("User %s (%s) has no starred repositories", curr_user.login, curr_user.id)
                         break
-                     if self.last_repos.count(curr_repo.id) >= MAX_CYCLE - 1:
+                    if self.last_repos.count(curr_repo.id) >= MAX_CYCLE - 1:
                         logger.info("Seen repo %s (%s) too many times", curr_repo.full_name, curr_repo.id)
                         break
-                    self.last_users.appendleft(curr_user.id)
+                    self.last_repos.appendleft(curr_repo.id)
 
-                    self.seen_repos.increment(curr_repo.id)
+                    self.seen_repos.increment(curr_repo.full_name)
                     logger.info("Crawled to repository: %s (%s)", curr_repo.full_name, curr_repo.id)
 
                     iterations -= 1
