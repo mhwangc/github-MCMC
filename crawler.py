@@ -8,8 +8,9 @@ import socket
 
 from github import Github
 from store import Store
-from specs import GITHUB_TOKENS, SPIDER_TRAP, TOP_REPOS, logger, STATS_TIMEOUT, QUERY_INTERVAL
+from specs import GITHUB_TOKENS, SPIDER_TRAP, TOP_REPOS, logger, STATS_TIMEOUT, QUERY_INTERVAL, MAX_CYCLE, MAX_SEEN_QUEUE
 import time
+import collections
 
 # TODO: Test out new code
 # TODO: Implement stack, look for loops, logging etc
@@ -23,6 +24,8 @@ class GitHubCrawler:
         self.seen_repos = Store("/repos")  # {ID: int}
         self.contributors_cache = Store("/cache")  # ([userID], [score])
         self.token_num = 0
+        self.last_users = collections.deque([-1 for _ in range(MAX_SEEN_QUEUE)], MAX_SEEN_QUEUE)
+        self.last_repos = collections.deque([-1 for _ in range(MAX_SEEN_QUEUE)], MAX_SEEN_QUEUE)
 
     # Rotates keys
     @property
@@ -102,6 +105,10 @@ class GitHubCrawler:
                     if not curr_user:
                         logger.info("Repository %s (%s) has no contributors", curr_repo.full_name, curr_repo.id)
                         break
+                    if self.last_users.count(curr_user.id) >= MAX_CYCLE - 1:
+                        logger.info("Seen user %s (%s) too many times", curr_user.login, curr_user.id)
+                        break
+                    self.last_users.appendleft(curr_user.id)
 
                     self.seen_users.increment(curr_user.id)
                     logger.info("Crawled to user: %s (%s)", curr_user.login, curr_user.id)
@@ -113,6 +120,10 @@ class GitHubCrawler:
                     if not curr_repo:
                         logger.info("User %s (%s) has no starred repositories", curr_user.login, curr_user.id)
                         break
+                     if self.last_repos.count(curr_repo.id) >= MAX_CYCLE - 1:
+                        logger.info("Seen repo %s (%s) too many times", curr_repo.full_name, curr_repo.id)
+                        break
+                    self.last_users.appendleft(curr_user.id)
 
                     self.seen_repos.increment(curr_repo.id)
                     logger.info("Crawled to repository: %s (%s)", curr_repo.full_name, curr_repo.id)

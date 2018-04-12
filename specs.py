@@ -16,6 +16,9 @@ TOP_REPO_IDS = data["repo_id"]
 STATS_TIMEOUT = 300
 QUERY_INTERVAL = 30
 
+MAX_CYCLE = 3
+MAX_SEEN_QUEUE = 15
+
 # Logging
 now = datetime.datetime.now().strftime("%Y-%m-%d-%H-%M")
 logger = logging.getLogger(__name__)
