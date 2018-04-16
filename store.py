@@ -72,7 +72,7 @@ def get_top_results(path="/repos", n=100):
         print(path, "is not a valid path")
         return []
 
-def get_top_results(path="/users", n=100):
+def get_top_user_results(path="/users", n=100):
     leaders = []
     try:
         direc = client.get(path)
@@ -130,11 +130,13 @@ if __name__ == '__main__':
         with open("repos"+now, "w+") as f:
             for result in get_top_results(n=-1):
                 f.write(result[0] + ", " + str(result[1]))
+                f.write("\n")
     elif sys.argv[1] == "dumpusers":
         now = datetime.datetime.now().strftime("%Y-%m-%d-%H-%M")
         with open("users"+now, "w+") as f:
             for result in get_top_user_results(n=-1):
                 f.write(result[0] + ", " + str(result[1]))
+                f.write("\n")
     else:
         print(sys.argv[1], "is not a valid argument. Choose from {test, clear, leader}.")
 
