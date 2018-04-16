@@ -1,5 +1,6 @@
 import etcd
 import os, sys, random
+import datetime
 
 portnum = int(os.getenv("etcdport", "2379"))
 
@@ -64,6 +65,22 @@ def get_top_results(path="/repos", n=100):
              leaders.extend([(r.key, r.value) for r in direc2.children if r.value])
         print("Total of {0} repos in db".format(len(leaders)))
         print("Average of {0} points per repo".format(sum([int(x[1]) for x in leaders if x[1]]) / len(leaders)))
+        if n == -1:
+            n = len(leaders)
+        return sorted(leaders, key=lambda x: int(x[1]), reverse=True)[:n]
+    except etcd.EtcdKeyNotFound:
+        print(path, "is not a valid path")
+        return []
+
+def get_top_results(path="/users", n=100):
+    leaders = []
+    try:
+        direc = client.get(path)
+        leaders.extend([(r.key, r.value) for r in direc.children if r.value])
+        print("Total of {0} users in db".format(len(leaders)))
+        print("Average of {0} points per user".format(sum([int(x[1]) for x in leaders if x[1]]) / len(leaders)))
+        if n == -1:
+            n = len(leaders)
         return sorted(leaders, key=lambda x: int(x[1]), reverse=True)[:n]
     except etcd.EtcdKeyNotFound:
         print(path, "is not a valid path")
@@ -105,6 +122,19 @@ if __name__ == '__main__':
     elif sys.argv[1] == "leader":
         for result in get_top_results():
             print(result[0], ":", result[1])
+    elif sys.argv[1] == "leaderusers":
+        for result in get_top_user_results():
+            print(result[0], ":", result[1])
+    elif sys.argv[1] == "dumprepos":
+        now = datetime.datetime.now().strftime("%Y-%m-%d-%H-%M")
+        with open("repos"+now, "w+") as f:
+            for result in get_top_results(n=-1):
+                f.write(result[0] + ", " + str(result[1]))
+    elif sys.argv[1] == "dumpusers":
+        now = datetime.datetime.now().strftime("%Y-%m-%d-%H-%M")
+        with open("users"+now, "w+") as f:
+            for result in get_top_user_results(n=-1):
+                f.write(result[0] + ", " + str(result[1]))
     else:
         print(sys.argv[1], "is not a valid argument. Choose from {test, clear, leader}.")
 
