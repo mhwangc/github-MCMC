@@ -4,7 +4,7 @@ import logging
 import logging.handlers
 import sys
 
-GITHUB_TOKENS = [] # removed tokens
+GITHUB_TOKENS = []
 
 SPIDER_TRAP = 0.05
 

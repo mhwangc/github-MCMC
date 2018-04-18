@@ -17,3 +17,6 @@ To get the top repos, run
 ```
 python store.py leader
 ```
+
+## Results
+Writeup is in `Github_MCMC.pdf`. Final results are in `results/repos.csv` and `results/users.csv`.

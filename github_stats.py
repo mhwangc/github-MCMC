@@ -1,7 +1,7 @@
 from github import Github
 import requests
 import json
-GITHUB_TOKENS = ["f36afb0b87470fe88c420a1da27c265bb2caab81", "8b748f83e389d682bce5584282f276c9596a3bc1", "74cb3a4715aea3274dff2119e9fccb5786849e17", "953d33b4353aa4bd60451127471e138bc36a46b2", "c374cc504b704b72b1e0bfa95f8479d0d7f810ed", "8a488574501e7637116f033cf3caa5a35e496a21"]
+from specs import GITHUB_TOKENS
 
 g_arr = [Github(token, per_page=100) for token in GITHUB_TOKENS]
 
